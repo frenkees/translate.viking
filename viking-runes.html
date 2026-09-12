@@ -1,0 +1,1213 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Vikingské runy — Převodník znaků · 12. století</title>
+  <meta name="description" content="Historicky přesný převodník latinských písmen na středověké vikingské runy (Futhork, 12. století) a číslic na skandinávský pentadický systém.">
+  <style>
+    /* ===== Color tokens ===== */
+    :root {
+      --bg: #14141a;
+      --bg-subtle: #1c1c24;
+      --card: #22222c;
+      --card-hover: #2a2a36;
+      --border: #33333f;
+      --text: #e2dfd8;
+      --text-muted: #908d85;
+      --text-dim: #686560;
+      --rune-color: #d4a74a;
+      --rune-glow: rgba(212, 167, 74, 0.12);
+      --rune-stroke: #c89b3e;
+      --accent: #8b7040;
+      --accent-light: #b8943e;
+      --input-bg: #18181f;
+      --input-border: #3a3a48;
+      --input-focus: #d4a74a;
+      --tag-bg: rgba(212, 167, 74, 0.12);
+      --tag-text: #d4a74a;
+      --dot-color: #e84a4a;
+      --separator: #444;
+    }
+
+    @media (prefers-color-scheme: light) {
+      :root:not([data-theme="dark"]) {
+        --bg: #f4f0e6;
+        --bg-subtle: #ebe7dc;
+        --card: #ffffff;
+        --card-hover: #faf7f0;
+        --border: #d5cfc2;
+        --text: #2c2820;
+        --text-muted: #706b60;
+        --text-dim: #9a9488;
+        --rune-color: #8a6510;
+        --rune-glow: rgba(138, 101, 16, 0.08);
+        --rune-stroke: #7a5a0e;
+        --accent: #6b5320;
+        --accent-light: #a07a18;
+        --input-bg: #f0ece2;
+        --input-border: #c8c2b5;
+        --input-focus: #8a6510;
+        --tag-bg: rgba(138, 101, 16, 0.1);
+        --tag-text: #7a5a0e;
+        --dot-color: #c53030;
+        --separator: #ccc;
+      }
+    }
+
+    :root[data-theme="dark"] {
+      --bg: #14141a;
+      --bg-subtle: #1c1c24;
+      --card: #22222c;
+      --card-hover: #2a2a36;
+      --border: #33333f;
+      --text: #e2dfd8;
+      --text-muted: #908d85;
+      --text-dim: #686560;
+      --rune-color: #d4a74a;
+      --rune-glow: rgba(212, 167, 74, 0.12);
+      --rune-stroke: #c89b3e;
+      --accent: #8b7040;
+      --accent-light: #b8943e;
+      --input-bg: #18181f;
+      --input-border: #3a3a48;
+      --input-focus: #d4a74a;
+      --tag-bg: rgba(212, 167, 74, 0.12);
+      --tag-text: #d4a74a;
+      --dot-color: #e84a4a;
+      --separator: #444;
+    }
+
+    /* ===== Reset & base ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Georgia', 'Times New Roman', 'Palatino', serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+      min-height: 100vh;
+      padding: 0 16px;
+    }
+
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+      padding-block: 40px 80px;
+    }
+
+    /* ===== Header ===== */
+    .page-header {
+      text-align: center;
+      margin-bottom: 48px;
+      padding-bottom: 32px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .page-header h1 {
+      font-size: clamp(1.8rem, 5vw, 2.6rem);
+      font-weight: 700;
+      color: var(--rune-color);
+      letter-spacing: 0.02em;
+      margin-bottom: 8px;
+    }
+
+    .page-header .subtitle {
+      font-size: 1rem;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    .page-header .era-tag {
+      display: inline-block;
+      margin-top: 12px;
+      padding: 4px 14px;
+      background: var(--tag-bg);
+      color: var(--tag-text);
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-style: normal;
+    }
+
+    /* ===== Sections ===== */
+    section {
+      margin-bottom: 48px;
+    }
+
+    section h2 {
+      font-size: 1.35rem;
+      color: var(--rune-color);
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    section h3 {
+      font-size: 1.1rem;
+      color: var(--accent-light);
+      margin: 20px 0 10px;
+    }
+
+    p { margin-bottom: 12px; }
+
+    /* ===== Converter panels ===== */
+    .converter-panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px;
+    }
+
+    .converter-panel h2 {
+      border: none;
+      padding: 0;
+      margin-bottom: 20px;
+    }
+
+    .input-wrap {
+      margin-bottom: 20px;
+    }
+
+    .input-wrap label {
+      display: block;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    textarea, input[type="number"] {
+      width: 100%;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 1.05rem;
+      padding: 12px 14px;
+      transition: border-color 0.2s;
+    }
+
+    textarea:focus, input[type="number"]:focus {
+      outline: none;
+      border-color: var(--input-focus);
+      box-shadow: 0 0 0 3px var(--rune-glow);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 70px;
+    }
+
+    input[type="number"] {
+      max-width: 260px;
+      -moz-appearance: textfield;
+    }
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+    }
+
+    .output-label {
+      font-size: 0.85rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 10px;
+    }
+
+    /* ===== Rune output ===== */
+    .rune-output {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      gap: 4px;
+      min-height: 90px;
+      padding: 16px;
+      background: var(--bg-subtle);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+
+    .rune-tile {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .rune-tile svg {
+      width: 36px;
+      height: 62px;
+      filter: drop-shadow(0 0 6px var(--rune-glow));
+    }
+
+    .rune-tile .rune-label {
+      font-size: 0.65rem;
+      color: var(--text-dim);
+      font-family: monospace;
+      line-height: 1;
+    }
+
+    .rune-space {
+      width: 20px;
+      height: 62px;
+    }
+
+    .rune-separator svg {
+      width: 14px;
+      height: 62px;
+    }
+
+    .rune-unknown {
+      width: 36px;
+      height: 62px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-dim);
+      font-size: 0.8rem;
+      font-family: monospace;
+    }
+
+    .placeholder-text {
+      color: var(--text-dim);
+      font-style: italic;
+      font-size: 0.95rem;
+      padding: 20px 0;
+      text-align: center;
+      width: 100%;
+    }
+
+    /* ===== Number output ===== */
+    .number-output {
+      min-height: 90px;
+      padding: 16px;
+      background: var(--bg-subtle);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+
+    .tally-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      gap: 3px;
+      margin-bottom: 12px;
+    }
+
+    .tally-mark svg {
+      height: 56px;
+    }
+
+    .tally-mark.mark-one svg { width: 16px; }
+    .tally-mark.mark-five svg { width: 24px; }
+    .tally-mark.mark-ten svg { width: 30px; }
+    .tally-mark.mark-hundred svg { width: 36px; }
+
+    .tally-gap {
+      width: 14px;
+    }
+
+    .number-breakdown {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid var(--border);
+    }
+
+    .number-note {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      margin-top: 8px;
+      font-style: italic;
+    }
+
+    /* ===== Reference table ===== */
+    .rune-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 10px;
+    }
+
+    .rune-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 10px;
+      text-align: center;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .rune-card:hover {
+      background: var(--card-hover);
+      border-color: var(--accent);
+    }
+
+    .rune-card svg {
+      width: 40px;
+      height: 68px;
+      margin-bottom: 6px;
+      filter: drop-shadow(0 0 6px var(--rune-glow));
+    }
+
+    .rune-card .card-name {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--accent-light);
+    }
+
+    .rune-card .card-sound {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .rune-card .card-latin {
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      margin-top: 2px;
+      font-family: monospace;
+    }
+
+    .rune-card .card-unicode {
+      font-size: 1.4rem;
+      color: var(--text-dim);
+      margin-top: 4px;
+      line-height: 1;
+    }
+
+    .rune-card.medieval-card {
+      border-left: 3px solid var(--dot-color);
+    }
+
+    /* ===== Tally reference ===== */
+    .tally-ref-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .tally-ref-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 8px;
+      text-align: center;
+    }
+
+    .tally-ref-card svg {
+      height: 48px;
+      margin-bottom: 4px;
+    }
+
+    .tally-ref-card .tally-val {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--accent-light);
+    }
+
+    /* ===== Info sections ===== */
+    .info-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px 24px;
+      margin-bottom: 16px;
+    }
+
+    .info-box p:last-child { margin-bottom: 0; }
+
+    .mapping-note {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 12px;
+      padding: 10px 14px;
+      background: var(--tag-bg);
+      border-radius: 6px;
+    }
+
+    .mapping-note strong {
+      color: var(--tag-text);
+    }
+
+    ul.hist-list {
+      list-style: none;
+      padding: 0;
+    }
+
+    ul.hist-list li {
+      padding: 6px 0 6px 20px;
+      position: relative;
+      font-size: 0.95rem;
+    }
+
+    ul.hist-list li::before {
+      content: '᛫';
+      position: absolute;
+      left: 0;
+      color: var(--rune-color);
+    }
+
+    .timeline {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin: 16px 0;
+    }
+
+    .timeline-item {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+    }
+
+    .timeline-date {
+      flex-shrink: 0;
+      width: 100px;
+      font-size: 0.85rem;
+      color: var(--accent-light);
+      font-weight: 600;
+      text-align: right;
+      padding-top: 2px;
+    }
+
+    .timeline-text {
+      font-size: 0.92rem;
+      color: var(--text-muted);
+      padding-left: 14px;
+      border-left: 2px solid var(--border);
+    }
+
+    .legend-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 4px;
+      vertical-align: middle;
+    }
+
+    .legend-dot.medieval { background: var(--dot-color); }
+
+    footer {
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      padding-top: 32px;
+      border-top: 1px solid var(--border);
+    }
+
+    footer a {
+      color: var(--text-muted);
+    }
+
+    @media (max-width: 500px) {
+      .converter-panel { padding: 18px 14px; }
+      .rune-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
+      .timeline-item { flex-direction: column; gap: 2px; }
+      .timeline-date { text-align: left; width: auto; }
+      .timeline-text { border-left: none; padding-left: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <!-- Header -->
+    <header class="page-header">
+      <h1>Vikingsk&yacute; převodn&iacute;k run</h1>
+      <p class="subtitle">Převod latinsk&yacute;ch znaků na středověk&eacute; skandin&aacute;vsk&eacute; runy</p>
+      <span class="era-tag">Středověk&yacute; Futhork &middot; 12. stolet&iacute;</span>
+    </header>
+
+    <!-- Intro -->
+    <section>
+      <div class="info-box">
+        <p>
+          Tento převodn&iacute;k použ&iacute;v&aacute; <strong>středověk&yacute; Futhork</strong> &mdash; runov&yacute; syst&eacute;m použ&iacute;van&yacute; ve Skandin&aacute;vii ve 12.&nbsp;stolet&iacute;.
+          Vych&aacute;z&iacute; z&nbsp;16 run <em>Mladš&iacute;ho Futharku</em> (cca 800&ndash;1100), rozš&iacute;řen&eacute;ho o&nbsp;tečkovan&eacute; runy pro rozlišen&iacute; hlásek, kter&eacute; původn&iacute; sada nepokr&yacute;vala.
+        </p>
+        <p>
+          Č&iacute;slice jsou zobrazeny <strong>skandin&aacute;vsk&yacute;m pentadick&yacute;m syst&eacute;mem</strong> &mdash;
+          z&aacute;řezov&yacute;m poč&iacute;t&aacute;n&iacute;m použ&iacute;van&yacute;m na vroubovac&iacute;ch hůlk&aacute;ch (<em>karvstokk</em>) a&nbsp;runov&yacute;ch kalend&aacute;řn&iacute;ch ty&ccedil;&iacute;ch (<em>primstav</em>).
+        </p>
+      </div>
+    </section>
+
+    <!-- TEXT → RUNES converter -->
+    <section>
+      <div class="converter-panel">
+        <h2>Převod p&iacute;smen na runy</h2>
+        <div class="input-wrap">
+          <label for="text-input">Zadejte text (latinsk&eacute; znaky):</label>
+          <textarea id="text-input" placeholder="Př.: Ahoj vikingu" rows="2"></textarea>
+        </div>
+        <div class="output-label">V&yacute;stup v run&aacute;ch</div>
+        <div class="rune-output" id="rune-output">
+          <span class="placeholder-text">Napište text v&yacute;še&hellip;</span>
+        </div>
+        <div class="mapping-note">
+          <strong>Pozn&aacute;mka:</strong> Středověk&yacute; Futhork měl pouze 20 run. Některá
+          latinsk&aacute; p&iacute;smena sd&iacute;lej&iacute; jednu runu (např. c=k, v=u, z=s).
+          Digraf &bdquo;th&ldquo; se převád&iacute; na runu Þurs (ᚦ).
+        </div>
+      </div>
+    </section>
+
+    <!-- NUMBER → TALLY converter -->
+    <section>
+      <div class="converter-panel">
+        <h2>Převod č&iacute;slic &mdash; pentadick&yacute; syst&eacute;m</h2>
+        <div class="input-wrap">
+          <label for="number-input">Zadejte č&iacute;slo (0&ndash;9999):</label>
+          <input type="number" id="number-input" min="0" max="9999" placeholder="Př.: 127">
+        </div>
+        <div class="output-label">V&yacute;stup v z&aacute;řezech</div>
+        <div class="number-output" id="number-output">
+          <span class="placeholder-text">Zadejte č&iacute;slo v&yacute;še&hellip;</span>
+        </div>
+        <div class="mapping-note">
+          <strong>Syst&eacute;m:</strong>
+          <strong>|</strong> = 1 &nbsp;&middot;&nbsp;
+          <strong>/</strong> = 5 &nbsp;&middot;&nbsp;
+          <strong>X</strong> = 10 &nbsp;&middot;&nbsp;
+          <strong>&#x2295;</strong> = 100
+        </div>
+      </div>
+    </section>
+
+    <!-- Reference chart: Runes -->
+    <section>
+      <h2>Tabulka run &mdash; Středověk&yacute; Futhork</h2>
+      <p style="color:var(--text-muted); font-size:0.92rem; margin-bottom:16px;">
+        16 z&aacute;kladn&iacute;ch run Mladš&iacute;ho Futharku (dlouh&aacute; větev / d&aacute;nsk&yacute; styl) + 4 středověk&eacute; tečkovan&eacute; runy.
+        <br><span class="legend-dot medieval"></span> = středověk&aacute; tečkovan&aacute; runa
+      </p>
+      <div class="rune-grid" id="rune-grid"></div>
+    </section>
+
+    <!-- Reference chart: Tally marks -->
+    <section>
+      <h2>Přehled pentadick&yacute;ch značek</h2>
+      <p style="color:var(--text-muted); font-size:0.92rem;">
+        Aditivn&iacute; syst&eacute;m: č&iacute;slo se rozlož&iacute; na stovky, des&iacute;tky, pětky a jedničky a zobraz&iacute; jako odpov&iacute;daj&iacute;c&iacute; z&aacute;řezy.
+      </p>
+      <div class="tally-ref-grid" id="tally-ref-grid"></div>
+    </section>
+
+    <!-- Historical context -->
+    <section>
+      <h2>Historick&yacute; kontext</h2>
+
+      <h3>V&yacute;voj runov&eacute;ho p&iacute;sma</h3>
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="timeline-date">cca 150&ndash;800</div>
+          <div class="timeline-text">
+            <strong>Starš&iacute; Futhark</strong> &mdash; 24 run. Použ&iacute;v&aacute;n germ&aacute;nsk&yacute;mi kmeny po cel&eacute; severn&iacute; Evropě.
+            Název &bdquo;futhark&ldquo; pochází z prvn&iacute;ch šesti run: ᚠ ᚢ ᚦ ᚨ ᚱ ᚲ.
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-date">cca 800&ndash;1100</div>
+          <div class="timeline-text">
+            <strong>Mladš&iacute; Futhark</strong> &mdash; redukce na 16 run. Paradoxně v&iacute;ce hl&aacute;sek, m&eacute;ně znaků.
+            Existuj&iacute; dvě hlavn&iacute; varianty: <em>dlouh&aacute; větev</em> (d&aacute;nsk&yacute; styl) a <em>kr&aacute;tk&aacute; větev</em> (švédsko-norsk&yacute; styl).
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-date">cca 1100&ndash;1500</div>
+          <div class="timeline-text">
+            <strong>Středověk&yacute; Futhork</strong> &mdash; rozš&iacute;řen&iacute; o tečkovan&eacute; runy (přid&aacute;n&iacute;m tečky k existuj&iacute;c&iacute; runě).
+            Použ&iacute;v&aacute; se souběžně s latink&yacute;m p&iacute;smem, zejm&eacute;na v každodenn&iacute;m životě a na venkově.
+          </div>
+        </div>
+      </div>
+
+      <h3>Tečkovan&eacute; runy (12.&nbsp;stolet&iacute;)</h3>
+      <div class="info-box">
+        <p>
+          Mladš&iacute; Futhark měl pouze 16 run pro cca 25+ hl&aacute;sek staroseverskšiny.
+          Např&iacute;klad jedna runa ᚴ (Kaun) sloužila pro /k/ i /g/, ᛏ (T&yacute;r) pro /t/ i /d/.
+          Středověk&eacute; rozš&iacute;řen&iacute; toto řeš&iacute; přid&aacute;n&iacute;m malé tečky k z&aacute;kladn&iacute; runě:
+        </p>
+        <ul class="hist-list">
+          <li>ᚵ (g) = tečkovaná ᚴ (k)</li>
+          <li>ᛑ (d) = tečkovaná ᛏ (t)</li>
+          <li>ᛔ (p) = tečkovaná ᛒ (b)</li>
+          <li>ᛂ (e) = tečkovaná ᛁ (i)</li>
+        </ul>
+      </div>
+
+      <h3>Pentadick&yacute; č&iacute;seln&yacute; syst&eacute;m</h3>
+      <div class="info-box">
+        <p>
+          Vikingov&eacute; nepoužívali pozičn&iacute; č&iacute;seln&yacute; syst&eacute;m jako arab&scaron;tinu. Pro praktick&eacute;
+          poč&iacute;t&aacute;n&iacute; (obchod, daně, sč&iacute;t&aacute;n&iacute; stád) použ&iacute;vali <strong>z&aacute;řezov&yacute; syst&eacute;m</strong>
+          na <em>vroubovac&iacute;ch hůlk&aacute;ch</em> (norsky <em>karvstokk</em>).
+        </p>
+        <p>
+          Syst&eacute;m je aditivn&iacute; a seskupuje po pětic&iacute;ch (pentadick&yacute;):
+          jednoduch&eacute; z&aacute;řezy pro 1&ndash;4, šikm&yacute; z&aacute;řez pro 5, kř&iacute;žov&yacute; z&aacute;řez pro 10.
+          Vyšš&iacute; č&iacute;sla (stovky) použ&iacute;vala propracovanějš&iacute; značky.
+        </p>
+        <p>
+          Ve 12.&nbsp;stolet&iacute; se v&nbsp;ofici&aacute;ln&iacute;ch dokumentech již běžně použ&iacute;valy ř&iacute;msk&eacute; č&iacute;slice,
+          ale pentadick&yacute; syst&eacute;m přetrval v praxi až do 19.&nbsp;stolet&iacute;.
+        </p>
+      </div>
+
+      <h3>Omezenosti převodu</h3>
+      <div class="info-box">
+        <p>
+          Runy byly navrženy pro staroseveršt&iacute;nu, nikoli pro modern&iacute; latinu či češtinu.
+          Tento převodn&iacute;k přibližuje fon&eacute;movou korespondenci, ale nen&iacute; lingvistick&yacute;m přepisem.
+        </p>
+        <ul class="hist-list">
+          <li><strong>c, q</strong> → ᚴ (k) &mdash; latinsky převzat&eacute; hl&aacute;sky neměly vlastn&iacute; runu</li>
+          <li><strong>v, w</strong> → ᚢ (u) &mdash; hláska /v/ nebyla od /u/ odlišena</li>
+          <li><strong>z</strong> → ᛋ (s) &mdash; /z/ se ve staroseverštině nevyskytovalo</li>
+          <li><strong>x</strong> → ᚴᛋ (k+s) &mdash; kombinace dvou run</li>
+          <li><strong>j</strong> → ᛁ (i) &mdash; /j/ se zapisovalo jako /i/</li>
+          <li>Česk&eacute; diakritick&eacute; znaky (č, ř, š, ž…) jsou mapov&aacute;ny na z&aacute;kladn&iacute; p&iacute;smeno</li>
+        </ul>
+      </div>
+    </section>
+
+    <footer>
+      Historick&aacute; data vych&aacute;zej&iacute; ze Skandin&aacute;vsk&eacute; runov&eacute; datab&aacute;ze (Samnordisk runtextdatabas),
+      pr&aacute;ce M.&nbsp;P.&nbsp;Barnese (<em>Runes: A Handbook</em>, 2012) a d&aacute;nsk&eacute;ho N&aacute;rodn&iacute;ho muzea.
+    </footer>
+
+  </div>
+
+  <script>
+    /* =================================================================
+       RUNE DEFINITIONS — Medieval Futhork (12th century)
+       Long-branch (Danish) style, with medieval dotted additions.
+       Each rune: lines = array of [x1,y1,x2,y2], dots = array of [cx,cy].
+       ViewBox: 0 0 40 70
+       ================================================================= */
+
+    const RUNE_DATA = {
+      f:  {
+        name: 'Fé', sound: 'f', meaning: 'bohatství', unicode: 'ᚠ',
+        latin: 'f', medieval: false,
+        lines: [[10,5,10,65],[10,15,32,5],[10,32,32,22]]
+      },
+      u:  {
+        name: 'Úr', sound: 'u', meaning: 'déšť / struska', unicode: 'ᚢ',
+        latin: 'u, v, w', medieval: false,
+        lines: [[10,5,10,65],[10,8,32,35],[32,35,10,62]]
+      },
+      th: {
+        name: 'Þurs', sound: 'þ (th)', meaning: 'obr', unicode: 'ᚦ',
+        latin: 'þ, th', medieval: false,
+        lines: [[10,5,10,65],[10,20,32,35],[32,35,10,50]]
+      },
+      o:  {
+        name: 'Óss', sound: 'o / ą', meaning: 'bůh / ústí řeky', unicode: 'ᚬ',
+        latin: 'o', medieval: false,
+        lines: [[30,5,30,65],[30,12,8,5],[30,28,8,20]]
+      },
+      r:  {
+        name: 'Reið', sound: 'r', meaning: 'jízda', unicode: 'ᚱ',
+        latin: 'r, ř', medieval: false,
+        lines: [[10,5,10,65],[10,12,32,22],[10,28,32,22]]
+      },
+      k:  {
+        name: 'Kaun', sound: 'k', meaning: 'vřed / bolest', unicode: 'ᚴ',
+        latin: 'k, c, q', medieval: false,
+        lines: [[10,5,10,65],[10,28,32,15],[10,28,32,42]]
+      },
+      h:  {
+        name: 'Hagall', sound: 'h', meaning: 'kroupy', unicode: 'ᚼ',
+        latin: 'h', medieval: false,
+        lines: [[10,5,10,65],[10,35,32,8]]
+      },
+      n:  {
+        name: 'Nauðr', sound: 'n', meaning: 'nouze / nutnost', unicode: 'ᚾ',
+        latin: 'n, ň', medieval: false,
+        lines: [[20,5,20,65],[8,48,32,22]]
+      },
+      i:  {
+        name: 'Íss', sound: 'i', meaning: 'led', unicode: 'ᛁ',
+        latin: 'i, j', medieval: false,
+        lines: [[20,5,20,65]]
+      },
+      a:  {
+        name: 'Ár', sound: 'a', meaning: 'úroda / rok', unicode: 'ᛅ',
+        latin: 'a, á', medieval: false,
+        lines: [[10,5,10,65],[10,8,32,28]]
+      },
+      s:  {
+        name: 'Sól', sound: 's', meaning: 'slunce', unicode: 'ᛋ',
+        latin: 's, š, z, ž', medieval: false,
+        lines: [[28,8,12,28],[12,28,28,48],[28,48,12,62]]
+      },
+      t:  {
+        name: 'Týr', sound: 't', meaning: 'bůh Týr', unicode: 'ᛏ',
+        latin: 't, ť', medieval: false,
+        lines: [[20,12,20,65],[8,22,20,8],[20,8,32,22]]
+      },
+      b:  {
+        name: 'Bjarkan', sound: 'b', meaning: 'bříza', unicode: 'ᛒ',
+        latin: 'b', medieval: false,
+        lines: [[10,5,10,65],[10,8,32,22],[32,22,10,36]]
+      },
+      m:  {
+        name: 'Maðr', sound: 'm', meaning: 'člověk', unicode: 'ᛘ',
+        latin: 'm', medieval: false,
+        lines: [[30,5,30,65],[30,15,8,35],[30,35,8,55]]
+      },
+      l:  {
+        name: 'Lögr', sound: 'l', meaning: 'voda / jezero', unicode: 'ᛚ',
+        latin: 'l', medieval: false,
+        lines: [[10,5,10,65],[10,50,32,65]]
+      },
+      y:  {
+        name: 'Ýr', sound: 'R / y', meaning: 'tis (strom)', unicode: 'ᛦ',
+        latin: 'y, ý', medieval: false,
+        lines: [[20,5,20,45],[20,45,8,65],[20,45,32,65]]
+      },
+      e:  {
+        name: 'E (tečk. Íss)', sound: 'e', meaning: '—', unicode: 'ᛂ',
+        latin: 'e, é, ě', medieval: true,
+        lines: [[20,5,20,65]],
+        dots: [[29,35]]
+      },
+      d:  {
+        name: 'D (tečk. Týr)', sound: 'd', meaning: '—', unicode: 'ᛑ',
+        latin: 'd, ď', medieval: true,
+        lines: [[20,12,20,65],[8,22,20,8],[20,8,32,22]],
+        dots: [[32,42]]
+      },
+      p:  {
+        name: 'P (tečk. Bjarkan)', sound: 'p', meaning: '—', unicode: 'ᛔ',
+        latin: 'p', medieval: true,
+        lines: [[10,5,10,65],[10,8,32,22],[32,22,10,36]],
+        dots: [[29,48]]
+      },
+      g:  {
+        name: 'G (tečk. Kaun)', sound: 'g', meaning: '—', unicode: 'ᚵ',
+        latin: 'g', medieval: true,
+        lines: [[10,5,10,65],[10,28,32,15],[10,28,32,42]],
+        dots: [[29,55]]
+      }
+    };
+
+    /* ===== Letter → rune-key mapping ===== */
+    const LETTER_MAP = {
+      'a':'a','á':'a','à':'a','â':'a','ä':'a','æ':'a',
+      'b':'b',
+      'c':'k','č':'k',
+      'd':'d','ď':'d',
+      'e':'e','é':'e','è':'e','ê':'e','ě':'e',
+      'f':'f',
+      'g':'g',
+      'h':'h','ch':'h',
+      'i':'i','í':'i','î':'i',
+      'j':'i',
+      'k':'k',
+      'l':'l',
+      'm':'m',
+      'n':'n','ň':'n',
+      'o':'o','ó':'o','ô':'o','ö':'o','ø':'o',
+      'p':'p',
+      'q':'k',
+      'r':'r','ř':'r',
+      's':'s','š':'s',
+      't':'t','ť':'t',
+      'u':'u','ú':'u','ù':'u','û':'u','ů':'u','ü':'u',
+      'v':'u',
+      'w':'u',
+      'x':['k','s'],
+      'y':'y','ý':'y',
+      'z':'s','ž':'s',
+      'å':'o',
+      'þ':'th','ð':'th'
+    };
+
+    const DIGRAPHS = { 'th': 'th' };
+
+    /* ===== SVG rendering helpers ===== */
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+
+    function createRuneSVG(runeKey, width, height) {
+      const data = RUNE_DATA[runeKey];
+      if (!data) return null;
+
+      const svg = document.createElementNS(SVG_NS, 'svg');
+      svg.setAttribute('viewBox', '0 0 40 70');
+      svg.setAttribute('width', width || 36);
+      svg.setAttribute('height', height || 62);
+      svg.setAttribute('aria-label', 'Runa ' + data.name);
+
+      const g = document.createElementNS(SVG_NS, 'g');
+      g.setAttribute('stroke', 'var(--rune-stroke)');
+      g.setAttribute('stroke-width', '3');
+      g.setAttribute('stroke-linecap', 'round');
+      g.setAttribute('fill', 'none');
+
+      for (const ln of data.lines) {
+        const line = document.createElementNS(SVG_NS, 'line');
+        line.setAttribute('x1', ln[0]);
+        line.setAttribute('y1', ln[1]);
+        line.setAttribute('x2', ln[2]);
+        line.setAttribute('y2', ln[3]);
+        g.appendChild(line);
+      }
+
+      if (data.dots) {
+        for (const dt of data.dots) {
+          const circle = document.createElementNS(SVG_NS, 'circle');
+          circle.setAttribute('cx', dt[0]);
+          circle.setAttribute('cy', dt[1]);
+          circle.setAttribute('r', '3');
+          circle.setAttribute('fill', 'var(--dot-color)');
+          circle.setAttribute('stroke', 'none');
+          g.appendChild(circle);
+        }
+      }
+
+      svg.appendChild(g);
+      return svg;
+    }
+
+    /* ===== Text → Runes conversion ===== */
+    function textToRunes(text) {
+      const result = [];
+      const lower = text.toLowerCase();
+      let idx = 0;
+
+      while (idx < lower.length) {
+        const ch = lower[idx];
+
+        if (ch === ' ' || ch === '\n' || ch === '\t') {
+          result.push({ type: 'space' });
+          idx++;
+          continue;
+        }
+
+        // Check digraphs first (th)
+        if (idx + 1 < lower.length) {
+          const di = lower.slice(idx, idx + 2);
+          if (DIGRAPHS[di]) {
+            result.push({ type: 'rune', key: DIGRAPHS[di], original: di });
+            idx += 2;
+            continue;
+          }
+        }
+
+        const mapped = LETTER_MAP[ch];
+        if (mapped) {
+          if (Array.isArray(mapped)) {
+            for (const k of mapped) {
+              result.push({ type: 'rune', key: k, original: ch });
+            }
+          } else {
+            result.push({ type: 'rune', key: mapped, original: ch });
+          }
+        } else if (/[.,:;!?]/.test(ch)) {
+          result.push({ type: 'separator' });
+        } else {
+          result.push({ type: 'unknown', original: ch });
+        }
+        idx++;
+      }
+      return result;
+    }
+
+    function renderRuneOutput(tokens, container) {
+      container.innerHTML = '';
+      if (tokens.length === 0) {
+        const ph = document.createElement('span');
+        ph.className = 'placeholder-text';
+        ph.textContent = 'Napište text výše…';
+        container.appendChild(ph);
+        return;
+      }
+
+      for (const tok of tokens) {
+        if (tok.type === 'space') {
+          const sp = document.createElement('span');
+          sp.className = 'rune-space';
+          container.appendChild(sp);
+        } else if (tok.type === 'separator') {
+          const sep = document.createElement('span');
+          sep.className = 'rune-tile rune-separator';
+          const svg = document.createElementNS(SVG_NS, 'svg');
+          svg.setAttribute('viewBox', '0 0 14 70');
+          svg.setAttribute('width', 14);
+          svg.setAttribute('height', 62);
+          const c1 = document.createElementNS(SVG_NS, 'circle');
+          c1.setAttribute('cx', 7); c1.setAttribute('cy', 28);
+          c1.setAttribute('r', 2.5); c1.setAttribute('fill', 'var(--rune-stroke)');
+          const c2 = document.createElementNS(SVG_NS, 'circle');
+          c2.setAttribute('cx', 7); c2.setAttribute('cy', 42);
+          c2.setAttribute('r', 2.5); c2.setAttribute('fill', 'var(--rune-stroke)');
+          svg.appendChild(c1); svg.appendChild(c2);
+          sep.appendChild(svg);
+          container.appendChild(sep);
+        } else if (tok.type === 'rune') {
+          const tile = document.createElement('span');
+          tile.className = 'rune-tile';
+          const svg = createRuneSVG(tok.key);
+          if (svg) tile.appendChild(svg);
+          const label = document.createElement('span');
+          label.className = 'rune-label';
+          label.textContent = tok.original;
+          tile.appendChild(label);
+          container.appendChild(tile);
+        } else {
+          const unk = document.createElement('span');
+          unk.className = 'rune-tile';
+          const box = document.createElement('span');
+          box.className = 'rune-unknown';
+          box.textContent = tok.original;
+          unk.appendChild(box);
+          const label = document.createElement('span');
+          label.className = 'rune-label';
+          label.textContent = '?';
+          unk.appendChild(label);
+          container.appendChild(unk);
+        }
+      }
+    }
+
+    /* ===== Number → Pentadic tally marks ===== */
+    function createTallyMark(type) {
+      const svg = document.createElementNS(SVG_NS, 'svg');
+      const g = document.createElementNS(SVG_NS, 'g');
+      g.setAttribute('stroke', 'var(--rune-stroke)');
+      g.setAttribute('stroke-linecap', 'round');
+      g.setAttribute('fill', 'none');
+
+      switch (type) {
+        case 'one':
+          svg.setAttribute('viewBox', '0 0 16 60');
+          g.setAttribute('stroke-width', '2.5');
+          const l1 = document.createElementNS(SVG_NS, 'line');
+          l1.setAttribute('x1',8); l1.setAttribute('y1',8);
+          l1.setAttribute('x2',8); l1.setAttribute('y2',52);
+          g.appendChild(l1);
+          break;
+
+        case 'five':
+          svg.setAttribute('viewBox', '0 0 24 60');
+          g.setAttribute('stroke-width', '3');
+          const l5 = document.createElementNS(SVG_NS, 'line');
+          l5.setAttribute('x1',4); l5.setAttribute('y1',52);
+          l5.setAttribute('x2',20); l5.setAttribute('y2',8);
+          g.appendChild(l5);
+          const lh = document.createElementNS(SVG_NS, 'line');
+          lh.setAttribute('x1',6); lh.setAttribute('y1',30);
+          lh.setAttribute('x2',18); lh.setAttribute('y2',30);
+          g.appendChild(lh);
+          break;
+
+        case 'ten':
+          svg.setAttribute('viewBox', '0 0 30 60');
+          g.setAttribute('stroke-width', '3');
+          const lx1 = document.createElementNS(SVG_NS, 'line');
+          lx1.setAttribute('x1',5); lx1.setAttribute('y1',10);
+          lx1.setAttribute('x2',25); lx1.setAttribute('y2',50);
+          const lx2 = document.createElementNS(SVG_NS, 'line');
+          lx2.setAttribute('x1',25); lx2.setAttribute('y1',10);
+          lx2.setAttribute('x2',5); lx2.setAttribute('y2',50);
+          g.appendChild(lx1); g.appendChild(lx2);
+          break;
+
+        case 'hundred':
+          svg.setAttribute('viewBox', '0 0 36 60');
+          g.setAttribute('stroke-width', '2.5');
+          const circ = document.createElementNS(SVG_NS, 'circle');
+          circ.setAttribute('cx',18); circ.setAttribute('cy',30);
+          circ.setAttribute('r',14);
+          g.appendChild(circ);
+          const cx1 = document.createElementNS(SVG_NS, 'line');
+          cx1.setAttribute('x1',8); cx1.setAttribute('y1',20);
+          cx1.setAttribute('x2',28); cx1.setAttribute('y2',40);
+          const cx2 = document.createElementNS(SVG_NS, 'line');
+          cx2.setAttribute('x1',28); cx2.setAttribute('y1',20);
+          cx2.setAttribute('x2',8); cx2.setAttribute('y2',40);
+          g.appendChild(cx1); g.appendChild(cx2);
+          break;
+      }
+
+      svg.appendChild(g);
+      return svg;
+    }
+
+    function numberToTally(num) {
+      if (num === 0) return { marks: [], breakdown: '0' };
+      const marks = [];
+      let remaining = num;
+      const parts = [];
+
+      const hundreds = Math.floor(remaining / 100);
+      if (hundreds > 0) {
+        for (let i = 0; i < hundreds; i++) marks.push('hundred');
+        parts.push(hundreds + '×100');
+        remaining %= 100;
+        if (remaining > 0) marks.push('gap');
+      }
+
+      const tens = Math.floor(remaining / 10);
+      if (tens > 0) {
+        for (let i = 0; i < tens; i++) marks.push('ten');
+        parts.push(tens + '×10');
+        remaining %= 10;
+        if (remaining > 0) marks.push('gap');
+      }
+
+      if (remaining >= 5) {
+        marks.push('five');
+        parts.push('1×5');
+        remaining -= 5;
+        if (remaining > 0) marks.push('gap');
+      }
+
+      if (remaining > 0) {
+        for (let i = 0; i < remaining; i++) marks.push('one');
+        parts.push(remaining + '×1');
+      }
+
+      return { marks, breakdown: parts.join(' + ') + ' = ' + num };
+    }
+
+    function renderNumberOutput(num, container) {
+      container.innerHTML = '';
+
+      if (num === null || num === undefined || num === '' || isNaN(num)) {
+        const ph = document.createElement('span');
+        ph.className = 'placeholder-text';
+        ph.textContent = 'Zadejte číslo výše…';
+        container.appendChild(ph);
+        return;
+      }
+
+      num = Math.max(0, Math.min(9999, Math.floor(num)));
+      const { marks, breakdown } = numberToTally(num);
+
+      if (marks.length === 0) {
+        const note = document.createElement('div');
+        note.className = 'number-note';
+        note.textContent = 'Nula neměla ve vikingském systému vlastní symbol.';
+        container.appendChild(note);
+        return;
+      }
+
+      const row = document.createElement('div');
+      row.className = 'tally-row';
+
+      for (const m of marks) {
+        if (m === 'gap') {
+          const gap = document.createElement('span');
+          gap.className = 'tally-gap';
+          row.appendChild(gap);
+        } else {
+          const wrap = document.createElement('span');
+          wrap.className = 'tally-mark mark-' + m;
+          wrap.appendChild(createTallyMark(m));
+          row.appendChild(wrap);
+        }
+      }
+      container.appendChild(row);
+
+      const bd = document.createElement('div');
+      bd.className = 'number-breakdown';
+      bd.textContent = breakdown;
+      container.appendChild(bd);
+
+      if (num > 99) {
+        const note = document.createElement('div');
+        note.className = 'number-note';
+        note.textContent = 'Pozn.: Pro čísla nad 99 se ve 12. století běžně používaly římské číslice. Pentadický systém sloužil především pro menší počty.';
+        container.appendChild(note);
+      }
+    }
+
+    /* ===== Build reference grids ===== */
+    function buildRuneGrid() {
+      const grid = document.getElementById('rune-grid');
+      const order = ['f','u','th','o','r','k','h','n','i','a','s','t','b','m','l','y','e','d','p','g'];
+
+      for (const key of order) {
+        const data = RUNE_DATA[key];
+        const card = document.createElement('div');
+        card.className = 'rune-card' + (data.medieval ? ' medieval-card' : '');
+
+        const svg = createRuneSVG(key, 40, 68);
+        card.appendChild(svg);
+
+        const name = document.createElement('div');
+        name.className = 'card-name';
+        name.textContent = data.name;
+        card.appendChild(name);
+
+        const sound = document.createElement('div');
+        sound.className = 'card-sound';
+        sound.textContent = '/' + data.sound + '/';
+        card.appendChild(sound);
+
+        const latin = document.createElement('div');
+        latin.className = 'card-latin';
+        latin.textContent = data.latin;
+        card.appendChild(latin);
+
+        const uni = document.createElement('div');
+        uni.className = 'card-unicode';
+        uni.textContent = data.unicode;
+        card.appendChild(uni);
+
+        grid.appendChild(card);
+      }
+    }
+
+    function buildTallyRefGrid() {
+      const grid = document.getElementById('tally-ref-grid');
+      const items = [
+        { val: 1, type: 'one', label: '1' },
+        { val: 5, type: 'five', label: '5' },
+        { val: 10, type: 'ten', label: '10' },
+        { val: 100, type: 'hundred', label: '100' },
+      ];
+
+      for (const item of items) {
+        const card = document.createElement('div');
+        card.className = 'tally-ref-card';
+        card.appendChild(createTallyMark(item.type));
+        const v = document.createElement('div');
+        v.className = 'tally-val';
+        v.textContent = '= ' + item.label;
+        card.appendChild(v);
+        grid.appendChild(card);
+      }
+    }
+
+    /* ===== Wire up event listeners ===== */
+    document.addEventListener('DOMContentLoaded', function() {
+      const textInput = document.getElementById('text-input');
+      const runeOutput = document.getElementById('rune-output');
+      const numberInput = document.getElementById('number-input');
+      const numberOutput = document.getElementById('number-output');
+
+      textInput.addEventListener('input', function() {
+        const tokens = textToRunes(this.value);
+        renderRuneOutput(tokens, runeOutput);
+      });
+
+      numberInput.addEventListener('input', function() {
+        const val = this.value.trim();
+        renderNumberOutput(val === '' ? null : parseInt(val, 10), numberOutput);
+      });
+
+      buildRuneGrid();
+      buildTallyRefGrid();
+    });
+  </script>
+</body>
+</html>
